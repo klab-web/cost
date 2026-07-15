@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>견적 계산기 — 용지·편집비 내역</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --ink:#191b1f; --sub:#6b7280; --line:#e6e8ec;
+    --accent:#2f56d9; --accent-soft:#eef2fe; --ok:#0e8a5f;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--ink);font-family:'Pretendard','Apple SD Gothic Neo','Segoe UI','Malgun Gothic',sans-serif;line-height:1.6;padding:36px 16px;font-size:15px;}
+  .wrap{max-width:920px;margin:0 auto;}
+  .top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:22px;flex-wrap:wrap;gap:10px;}
+  .top h1{font-size:23px;font-weight:800;letter-spacing:-.02em;}
+  .top h1 span{color:var(--accent);}
+  .top p{font-size:13px;color:var(--sub);margin-top:2px;}
+  .btn{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:9px 16px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:.12s;margin-left:8px;}
+  .btn:hover{border-color:#c9cdd4;}
+  .btn.primary{background:var(--ink);border-color:var(--ink);color:#fff;}
+  .btn.primary:hover{background:#000;}
+  .grid{display:grid;grid-template-columns:1fr 1.15fr;gap:18px;}
+  @media(max-width:760px){.grid{grid-template-columns:1fr;}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px;}
+  .card + .card{margin-top:18px;}
+  .card h2{font-size:12px;font-weight:700;letter-spacing:.14em;color:var(--sub);text-transform:uppercase;margin-bottom:16px;}
+  .field{margin-bottom:14px;}
+  label{display:block;font-size:12.5px;font-weight:600;color:var(--sub);margin-bottom:6px;}
+  select,input[type=number],input[type=text]{width:100%;padding:10px 12px;font-size:15px;border:1px solid var(--line);border-radius:10px;background:#fff;font-family:inherit;color:var(--ink);transition:.12s;}
+  select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+  .row2{display:flex;gap:12px;}
+  .row2 .field{flex:1;}
+  .calcbtn{width:100%;margin-top:4px;padding:13px;border:none;border-radius:12px;background:var(--accent);color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:.12s;}
+  .calcbtn:hover{background:#2646b8;}
+  .calcbtn.dark{background:var(--ink);}
+  .calcbtn.dark:hover{background:#000;}
+  .res{display:none;}
+  .res.show{display:block;}
+  .hero{background:var(--accent-soft);border-radius:12px;padding:16px 18px;margin-bottom:14px;}
+  .hero .l{font-size:12px;color:var(--sub);font-weight:600;}
+  .hero .v{font-size:28px;font-weight:800;letter-spacing:-.02em;color:var(--accent);font-variant-numeric:tabular-nums;}
+  .kv{display:flex;justify-content:space-between;padding:9px 2px;border-bottom:1px solid var(--line);font-size:13.5px;}
+  .kv:last-of-type{border-bottom:none;}
+  .kv b{font-variant-numeric:tabular-nums;font-weight:700;}
+  .kv span{color:var(--sub);}
+  .addbtn{width:100%;margin-top:14px;padding:11px;border:1px dashed var(--accent);border-radius:12px;background:transparent;color:var(--accent);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+  .addbtn:hover{background:var(--accent-soft);}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--sub);text-align:left;padding:8px 8px;border-bottom:1.5px solid var(--ink);white-space:nowrap;}
+  td{padding:10px 8px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;vertical-align:top;}
+  td.r,th.r{text-align:right;white-space:nowrap;}
+  td .desc{display:block;font-size:12px;color:var(--sub);white-space:normal;}
+  .tag{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:12px;background:var(--accent-soft);color:var(--accent);margin-right:4px;}
+  .tag.m{background:#f0fdf4;color:var(--ok);}
+  .del{border:none;background:none;color:#c33;cursor:pointer;font-size:13px;font-family:inherit;}
+  tfoot td{font-weight:800;border-bottom:none;border-top:2px solid var(--ink);font-size:14px;}
+  .empty{color:var(--sub);font-size:13px;text-align:center;padding:26px 0;}
+  .pricehead{display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
+  .pricebody{display:none;margin-top:12px;}
+  .pricebody.open{display:block;}
+  .pricebody td input{width:110px;padding:6px 9px;font-size:13.5px;border:1px solid var(--line);border-radius:8px;font-family:inherit;}
+  .warn{background:#fef7ec;border:1px solid #f3dfc0;color:#8a5a12;border-radius:10px;padding:10px 14px;font-size:12px;margin-top:12px;line-height:1.7;}
+  .foot{text-align:center;font-size:11.5px;color:var(--sub);margin-top:26px;}
+  #printSheet{display:none;}
+  @media print{
+    body{background:#fff;padding:0;}
+    .wrap{display:none;}
+    #printSheet{display:block;position:static;width:100%;background:#fff;color:#000;padding:10mm 8mm;font-size:12px;}
+    .ps-head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2.5px solid #000;padding-bottom:10px;margin-bottom:6px;}
+    .ps-head h1{font-size:22px;font-weight:800;letter-spacing:.06em;}
+    .ps-head .meta{text-align:right;font-size:11.5px;line-height:1.7;}
+    .ps-sub{display:flex;justify-content:space-between;font-size:12px;padding:8px 2px 14px;}
+    #printSheet table{width:100%;border-collapse:collapse;font-size:11.5px;}
+    #printSheet th{border-top:1.5px solid #000;border-bottom:1px solid #000;padding:7px 6px;text-align:left;font-weight:700;color:#000;}
+    #printSheet td{border-bottom:1px solid #ccc;padding:7px 6px;font-variant-numeric:tabular-nums;}
+    #printSheet .r{text-align:right;}
+    #printSheet tfoot td{border-top:1.5px solid #000;border-bottom:none;font-weight:800;font-size:13px;}
+    .ps-note{margin-top:14px;font-size:10.5px;color:#444;line-height:1.8;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>견적 계산기 <span>·</span> 용지 + 편집·제작비</h1>
+      <p>용지는 계산으로, 편집비·인쇄비 등은 직접 입력으로 — 한 견적서에 담아 엑셀·인쇄로 출력</p>
+    </div>
+    <div>
+      <button class="btn" onclick="exportExcel()">엑셀로 저장</button>
+      <button class="btn primary" onclick="printSheet()">견적서 인쇄</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- 왼쪽: 입력 -->
+    <div>
+      <div class="card">
+        <h2>① 용지 계산</h2>
+        <div class="row2">
+          <div class="field"><label>항목명</label><input type="text" id="itemName" value="내지" placeholder="내지 / 표지 / 간지…"></div>
+          <div class="field"><label>판형</label>
+            <select id="format">
+              <option value="8,kuk">국배판 · A4급 (국전지 8절)</option>
+              <option value="16,kuk">신국판 · 152×225 (국전지 16절)</option>
+              <option value="16,sa6">46배판 · B5급 (46전지 16절)</option>
+              <option value="32,sa6">46판 · A5급 (46전지 32절)</option>
+            </select>
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>지종 · 평량</label><select id="stock"></select></div>
+          <div class="field"><label>여분율 %</label><input type="number" id="waste" value="5" min="0" max="30" step="0.5"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>페이지 수</label><input type="number" id="pages" value="48" min="1" step="1"></div>
+          <div class="field"><label>부수</label><input type="number" id="copies" value="3000" min="1"></div>
+        </div>
+        <button class="calcbtn" onclick="calc()">용지 계산</button>
+
+        <div style="margin-top:18px;">
+          <div class="pricehead" onclick="togglePrice()">
+            <h2 style="margin:0;">지종별 단가표 (원/kg)</h2>
+            <span style="font-size:12px;color:var(--accent);font-weight:700;" id="parrow">펼치기</span>
+          </div>
+          <div class="pricebody" id="pbody">
+            <table id="priceTable"><thead><tr><th>지종</th><th>평량</th><th>단가(원/kg)</th></tr></thead><tbody></tbody></table>
+            <div class="warn">단가는 자리표시용 예시입니다. 실제 구매 단가로 수정 전에는 대외 견적에 쓰지 마세요.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>② 편집·제작비 직접 입력</h2>
+        <div class="row2">
+          <div class="field"><label>항목명</label><input type="text" id="mName" placeholder="예: 편집·기획비"></div>
+          <div class="field"><label>구분</label>
+            <select id="mCat"><option>편집·기획</option><option>디자인</option><option>취재·원고</option><option>사진·일러스트</option><option>인쇄</option><option>제본·후가공</option><option>운송</option><option>기타</option></select>
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>단가 (원)</label><input type="number" id="mPrice" placeholder="15000" min="0" step="100"></div>
+          <div class="field"><label>수량</label><input type="number" id="mQty" value="1" min="0" step="0.5"></div>
+          <div class="field"><label>단위</label>
+            <select id="mUnit"><option>식</option><option>페이지</option><option>부</option><option>건</option><option>회</option><option>컷</option></select>
+          </div>
+        </div>
+        <div class="field"><label>비고 (선택)</label><input type="text" id="mDesc" placeholder="예: 대지 작업 포함, 교정 3회"></div>
+        <button class="calcbtn dark" onclick="addManual()">내역에 추가</button>
+      </div>
+
+    </div>
+
+    <!-- 오른쪽: 결과/내역 -->
+    <div>
+      <div class="card">
+        <h2>용지 계산 결과</h2>
+        <div class="res" id="res">
+          <div class="hero"><div class="l" id="heroL">용지비 (여분 포함)</div><div class="v" id="cost">—</div></div>
+          <div class="kv"><span>필요 용지</span><b id="reams">—</b></div>
+          <div class="kv"><span>정미 / 여분 포함 전지</span><b id="sheets">—</b></div>
+          <div class="kv"><span>연당 중량 × 적용 단가</span><b id="unitinfo">—</b></div>
+          <div class="kv"><span>총 중량</span><b id="totalkg">—</b></div>
+          <button class="addbtn" onclick="addPaper()">+ 이 결과를 견적 내역에 담기</button>
+        </div>
+        <div class="empty" id="resEmpty">조건을 입력하고 [용지 계산]을 누르세요</div>
+      </div>
+
+      <div class="card">
+        <h2>견적 내역 <span id="icnt" style="color:var(--accent);"></span></h2>
+        <div class="field"><label>건명 (견적서 상단에 표시)</label><input type="text" id="jobName" placeholder="예: ○○재단 소식지 여름호"></div>
+        <div id="itemsWrap"><div class="empty">담긴 항목이 없습니다 — 용지 계산 결과와 편집·제작비를 담아보세요</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">경성문화사 내부용 초동 견적 도구 · 계산식은 견적서 각주에 병기 · 최종 견적은 견적 담당 확인</div>
+</div>
+
+<!-- 인쇄 전용 견적서 -->
+<div id="printSheet">
+  <div class="ps-head">
+    <h1>견 적 내 역 서</h1>
+    <div class="meta">경성문화사 · 내부 검토용<br><span id="psDate"></span></div>
+  </div>
+  <div class="ps-sub"><span>건명: <b id="psJob">—</b></span><span>작성: 견적 계산기 v3</span></div>
+  <table>
+    <thead><tr><th style="width:16%;">항목</th><th style="width:12%;">구분</th><th>내용 · 규격</th><th class="r" style="width:15%;">수량</th><th class="r" style="width:14%;">금액(원)</th></tr></thead>
+    <tbody id="psBody"></tbody>
+    <tfoot><tr><td colspan="4" class="r">합계 (부가세 별도)</td><td class="r" id="psTotal">—</td></tr></tfoot>
+  </table>
+  <div class="ps-note">
+    · 용지 계산식: 전지 매수 = 부수 × 페이지 ÷ (절수 × 2) · 1연 = 전지 500매 · 연당 중량 = 전지 면적(㎡) × 평량(g/㎡) × 500 ÷ 1,000 · 용지비 = 총 중량 × kg당 단가<br>
+    · 본 내역은 내부 검토용 초동 산출입니다. 기재되지 않은 공정(판값·필름·운송 등)과 부가세는 포함되어 있지 않으며, 용지 단가는 작성 시점의 사내 단가표 기준입니다.
+  </div>
+</div>
+
+<script>
+var SHEETS = { kuk:{name:'국전지', w:636, h:939}, sa6:{name:'46전지', w:788, h:1091} };
+var STOCKS = [
+  {name:'모조지',   gsm:80,  pricePerKg:1500},
+  {name:'모조지',   gsm:100, pricePerKg:1500},
+  {name:'아트지',   gsm:100, pricePerKg:1400},
+  {name:'아트지',   gsm:150, pricePerKg:1400},
+  {name:'아트지',   gsm:250, pricePerKg:1400},
+  {name:'스노우지', gsm:120, pricePerKg:1450},
+  {name:'스노우지', gsm:150, pricePerKg:1450},
+  {name:'랑데뷰',   gsm:130, pricePerKg:2600},
+  {name:'랑데뷰',   gsm:210, pricePerKg:2600},
+  {name:'재생지',   gsm:100, pricePerKg:1350}
+];
+var items = [];   // {type, name, cat, desc, qty, amount}
+var last = null;
+
+function fmt(n,d){ return n.toLocaleString('ko-KR',{maximumFractionDigits:(d===undefined?0:d)}); }
+
+function renderStocks(){
+  var sel=document.getElementById('stock'); sel.innerHTML='';
+  var tb=document.querySelector('#priceTable tbody'); tb.innerHTML='';
+  STOCKS.forEach(function(s,i){
+    var o=document.createElement('option'); o.value=i; o.textContent=s.name+' '+s.gsm+'g'; sel.appendChild(o);
+    var tr=document.createElement('tr');
+    tr.innerHTML='<td>'+s.name+'</td><td>'+s.gsm+'g</td><td><input type="number" value="'+s.pricePerKg+'" step="10" data-i="'+i+'" onchange="STOCKS[this.dataset.i].pricePerKg=parseFloat(this.value)||0"></td>';
+    tb.appendChild(tr);
+  });
+}
+function togglePrice(){ var b=document.getElementById('pbody'); b.classList.toggle('open');
+  document.getElementById('parrow').textContent=b.classList.contains('open')?'접기':'펼치기'; }
+
+function calc(){
+  var f=document.getElementById('format').value.split(',');
+  var cut=parseInt(f[0],10), sheet=SHEETS[f[1]];
+  var stock=STOCKS[parseInt(document.getElementById('stock').value,10)];
+  var pages=parseFloat(document.getElementById('pages').value)||0;
+  var copies=parseFloat(document.getElementById('copies').value)||0;
+  var waste=parseFloat(document.getElementById('waste').value)||0;
+  if(pages<=0||copies<=0){alert('페이지 수와 부수를 입력하세요.');return;}
+  var net=Math.ceil(copies*pages/(cut*2));
+  var gross=Math.ceil(net*(1+waste/100));
+  var reams=gross/500;
+  var area=(sheet.w/1000)*(sheet.h/1000);
+  var kgPerReam=area*stock.gsm*500/1000;
+  var totalKg=reams*kgPerReam;
+  var cost=Math.round(totalKg*stock.pricePerKg/100)*100;
+  var fmtName=document.getElementById('format').options[document.getElementById('format').selectedIndex].text.split('·')[0].trim();
+  last={ type:'paper', name:document.getElementById('itemName').value||'용지', cat:'용지',
+    desc:fmtName+' · '+stock.name+' '+stock.gsm+'g · '+pages+'p · 여분 '+waste+'% — 전지 '+fmt(gross)+'매 = '+reams.toFixed(2)+'연, '+fmt(totalKg,1)+'kg × '+fmt(stock.pricePerKg)+'원/kg',
+    qty:fmt(copies)+'부', amount:cost };
+  document.getElementById('res').classList.add('show');
+  document.getElementById('resEmpty').style.display='none';
+  document.getElementById('heroL').textContent=last.name+' 용지비 (여분 포함)';
+  document.getElementById('cost').textContent='약 '+fmt(cost)+'원';
+  document.getElementById('reams').textContent=sheet.name+' '+(reams>=10?reams.toFixed(1):reams.toFixed(2))+'연';
+  document.getElementById('sheets').textContent=fmt(net)+' / '+fmt(gross)+'매';
+  document.getElementById('unitinfo').textContent=kgPerReam.toFixed(1)+'kg/연 × '+fmt(stock.pricePerKg)+'원';
+  document.getElementById('totalkg').textContent=fmt(totalKg,1)+'kg';
+}
+function addPaper(){ if(!last) return; items.push(last); last=null; renderItems(); }
+
+function addManual(){
+  var name=document.getElementById('mName').value.trim();
+  var price=parseFloat(document.getElementById('mPrice').value)||0;
+  var qty=parseFloat(document.getElementById('mQty').value)||0;
+  var unit=document.getElementById('mUnit').value;
+  var cat=document.getElementById('mCat').value;
+  var desc=document.getElementById('mDesc').value.trim();
+  if(!name){ alert('항목명을 입력하세요.'); return; }
+  if(price<=0||qty<=0){ alert('단가와 수량을 입력하세요.'); return; }
+  items.push({ type:'manual', name:name, cat:cat,
+    desc:(desc?desc+' — ':'')+fmt(price)+'원 × '+fmt(qty,1)+unit,
+    qty:fmt(qty,1)+unit, amount:Math.round(price*qty) });
+  document.getElementById('mName').value=''; document.getElementById('mPrice').value=''; document.getElementById('mDesc').value='';
+  document.getElementById('mQty').value=1;
+  renderItems();
+}
+
+function delItem(i){ items.splice(i,1); renderItems(); }
+function renderItems(){
+  var w=document.getElementById('itemsWrap');
+  document.getElementById('icnt').textContent=items.length?('· '+items.length+'건'):'';
+  if(!items.length){ w.innerHTML='<div class="empty">담긴 항목이 없습니다 — 용지 계산 결과와 편집·제작비를 담아보세요</div>'; return; }
+  var total=0;
+  var h='<table><thead><tr><th>항목</th><th class="r">금액</th><th></th></tr></thead><tbody>';
+  items.forEach(function(it,i){ total+=it.amount;
+    h+='<tr><td><span class="tag'+(it.type==='manual'?' m':'')+'">'+it.cat+'</span><b>'+it.name+'</b> <span style="color:var(--sub)">· '+it.qty+'</span><span class="desc">'+it.desc+'</span></td>'
+      +'<td class="r"><b>'+fmt(it.amount)+'원</b></td><td><button class="del" onclick="delItem('+i+')">삭제</button></td></tr>';
+  });
+  h+='</tbody><tfoot><tr><td>합계 (부가세 별도)</td><td class="r">'+fmt(total)+'원</td><td></td></tr></tfoot></table>';
+  w.innerHTML=h;
+}
+
+/* ── 엑셀 저장 (CSV) ── */
+function exportExcel(){
+  var src=items.length?items:(last?[last]:[]);
+  if(!src.length){ alert('먼저 내역에 항목을 담아주세요.'); return; }
+  var rows=[['건명',document.getElementById('jobName').value||''],[],
+    ['항목','구분','내용·규격','수량','금액(원)']];
+  var total=0;
+  src.forEach(function(it){ total+=it.amount; rows.push([it.name,it.cat,it.desc,it.qty,it.amount]); });
+  rows.push([]); rows.push(['','','','합계 (부가세 별도)',total]);
+  rows.push([]); rows.push(['※ 내부 검토용 초동 산출 — 기재되지 않은 공정·부가세 미포함. 용지 단가는 사내 단가표 기준.']);
+  var csv='﻿'+rows.map(function(r){return r.map(function(c){return '"'+String(c).replace(/"/g,'""')+'"';}).join(',');}).join('\r\n');
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download='견적내역_'+(document.getElementById('jobName').value||'무제').replace(/[\\/:*?"<>| ]/g,'_')+'.csv';
+  a.click();
+}
+
+/* ── 인쇄 ── */
+function printSheet(){
+  var src=items.length?items:(last?[last]:[]);
+  if(!src.length){ alert('먼저 내역에 항목을 담아주세요.'); return; }
+  document.getElementById('psJob').textContent=document.getElementById('jobName').value||'(건명 미입력)';
+  var d=new Date();
+  document.getElementById('psDate').textContent=d.getFullYear()+'. '+(d.getMonth()+1)+'. '+d.getDate()+'.';
+  var tb=document.getElementById('psBody'); tb.innerHTML=''; var total=0;
+  src.forEach(function(it){ total+=it.amount;
+    var tr=document.createElement('tr');
+    tr.innerHTML='<td>'+it.name+'</td><td>'+it.cat+'</td><td>'+it.desc+'</td><td class="r">'+it.qty+'</td><td class="r">'+fmt(it.amount)+'</td>';
+    tb.appendChild(tr);
+  });
+  document.getElementById('psTotal').textContent=fmt(total);
+  window.print();
+}
+
+renderStocks();
+</script>
+</body>
+</html>
